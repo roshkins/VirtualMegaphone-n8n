@@ -1,0 +1,351 @@
+{
+  "name": "Virtual Megaphone",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "appId": "669644831096087",
+        "object": "page",
+        "fields": [
+          "feed"
+        ],
+        "options": {
+          "includeValues": true
+        }
+      },
+      "name": "Facebook Trigger",
+      "type": "n8n-nodes-base.facebookTrigger",
+      "typeVersion": 1,
+      "position": [
+        260,
+        90
+      ],
+      "webhookId": "392279c3-4c59-4916-a260-d05a7966a697",
+      "credentials": {
+        "facebookGraphAppApi": "Marin Homeless Union Virtual Megaphone App"
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"changes\"][0][\"value\"][\"message\"]}}",
+              "operation": "isEmpty"
+            }
+          ],
+          "number": [
+            {
+              "value1": "={{$json[\"changes\"][0][\"value\"][\"published\"]}}",
+              "operation": "notEqual",
+              "value2": 1
+            }
+          ]
+        }
+      },
+      "name": "IF",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        490,
+        120
+      ],
+      "notes": "If not (the post has a message and it is published) then don't publish it to twitter, else tweet it!"
+    },
+    {
+      "parameters": {
+        "text": "={{$json[\"changes\"][0][\"value\"][\"message\"]}}",
+        "additionalFields": {
+          "attachments": "photo"
+        }
+      },
+      "name": "Twitter",
+      "type": "n8n-nodes-base.twitter",
+      "typeVersion": 1,
+      "position": [
+        1380,
+        170
+      ],
+      "credentials": {
+        "twitterOAuth1Api": "Marin Homeless API"
+      }
+    },
+    {
+      "parameters": {},
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        390,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "\"n8n Rashi Abramson\" <rashi.abramson@gmail.com>",
+        "toEmail": "roshkins@gmail.com",
+        "subject": "= {{$json[\"workflow\"][\"name\"]}} - Error",
+        "text": "={{Object.values($json[\"execution\"]).join('\\n ')}} \n\n{{Object.values($json[\"execution\"][\"error\"]).join('\\n')}}",
+        "options": {}
+      },
+      "name": "Send Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        590,
+        320
+      ],
+      "credentials": {
+        "smtp": "Rashi.Abramson Gmail"
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"changes\"][0][\"value\"][\"video_id\"]}}",
+              "operation": "isEmpty"
+            }
+          ]
+        }
+      },
+      "name": "IF1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        460,
+        -40
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "upload",
+        "title": "={{$json[\"changes\"][0][\"value\"][\"message\"]}}",
+        "regionCode": "US",
+        "categoryId": "22",
+        "binaryProperty": "video",
+        "options": {
+          "defaultLanguage": "en",
+          "description": "={{$node[\"Facebook Trigger\"].json[\"changes\"][0][\"value\"][\"message\"]}}",
+          "notifySubscribers": true,
+          "privacyStatus": "private"
+        }
+      },
+      "name": "YouTube",
+      "type": "n8n-nodes-base.youTube",
+      "typeVersion": 1,
+      "position": [
+        1070,
+        -90
+      ],
+      "credentials": {
+        "youTubeOAuth2Api": "Upload to Youtube"
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{$json[\"changes\"][0][\"value\"][\"link\"]}}",
+        "responseFormat": "file",
+        "dataPropertyName": "video",
+        "options": {}
+      },
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        800,
+        -70
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "rashi.abramson@gmail.com",
+        "toEmail": "roshkins@gmail.com",
+        "ccEmail": "robbiepowelson@gmail.com",
+        "subject": "=Youtube Video ready to publish: {{$json[\"snippet\"][\"title\"]}}",
+        "text": "=Please edit title and description so that it's ready for a public audience.\n\nhttps://youtu.be/{{$json[\"id\"]}}",
+        "options": {}
+      },
+      "name": "Send Email1",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        1270,
+        -90
+      ],
+      "credentials": {
+        "smtp": "Rashi.Abramson Gmail"
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{$json[\"changes\"][0][\"value\"][\"link\"]}}",
+        "responseFormat": "file",
+        "dataPropertyName": "photo",
+        "options": {}
+      },
+      "name": "HTTP Request1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        90
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"changes\"][0][\"value\"][\"item\"]}}",
+              "value2": "photo"
+            }
+          ]
+        }
+      },
+      "name": "IF2",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        730,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "text": "={{$json[\"changes\"][0][\"value\"][\"message\"]}}",
+        "additionalFields": {}
+      },
+      "name": "Twitter1",
+      "type": "n8n-nodes-base.twitter",
+      "typeVersion": 1,
+      "position": [
+        1130,
+        220
+      ],
+      "credentials": {
+        "twitterOAuth1Api": "Marin Homeless API"
+      }
+    }
+  ],
+  "connections": {
+    "Facebook Trigger": {
+      "main": [
+        [
+          {
+            "node": "IF",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IF1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF": {
+      "main": [
+        [],
+        [
+          {
+            "node": "IF2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "YouTube",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "YouTube": {
+      "main": [
+        [
+          {
+            "node": "Send Email1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Twitter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Twitter1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "id": 1
+}
